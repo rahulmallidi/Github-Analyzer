@@ -1,0 +1,53 @@
+# Node
+/frontend/node_modules/
+# optional: ignore any node_modules at top level
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build outputs
+dist/
+# Ignore build/ unless you intentionally want built assets tracked
+build/
+frontend/build/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+backend/.venv/
+.venv/
+venv/
+env/
+pip-wheel-metadata/
+*.egg-info/
+*.egg
+.pytest_cache/
+.mypy_cache/
+coverage/
+.coverage
+
+# Environment / secrets
+.env
+.env.*           # .env.local, .env.production, etc.
+
+# IDEs / editors
+.vscode/
+.idea/
+*.suo
+*.user
+*.sln
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+
+# Others
+*.sqlite3
