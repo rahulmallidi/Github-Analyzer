@@ -1,0 +1,14 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Dark theme base */
+:root { color-scheme: dark; }
+body { @apply bg-gray-900 text-gray-200; }
+
+/***** Utility components *****/
+.card { @apply bg-gray-800 border border-gray-700 rounded-lg shadow-sm; }
+.card-header { @apply text-gray-200 font-semibold mb-2; }
+.btn-primary { @apply inline-flex items-center justify-center px-3 py-2 rounded-md bg-blue-500 text-white hover:bg-blue-600 transition border border-blue-600; }
+.input { @apply px-3 py-2 rounded-md bg-gray-900 border border-gray-700 text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500; }
+.overlay { @apply fixed inset-0 bg-black/50 flex items-center justify-center p-4; }
