@@ -1,6 +1,6 @@
 from flask import Flask, jsonify
 from flask_cors import CORS
-from services.github_api import (
+from backend.services.github_api import (
     get_repos,
     get_languages,
     get_commit_activity,
