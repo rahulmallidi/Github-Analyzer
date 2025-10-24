@@ -1,4 +1,5 @@
-from flask import Flask, jsonify
+import os
+from flask import Flask, jsonify, send_from_directory
 from flask_cors import CORS
 from backend.services.github_api import (
     get_repos,
@@ -10,27 +11,27 @@ from backend.services.github_api import (
     get_user_repos_list,
     get_readme
 )
-import os
 
-app = Flask(__name__)
+# Serve React build folder
+app = Flask(__name__, static_folder="frontend/build", static_url_path="")
 CORS(app)
 
-# Root route to avoid 404
-@app.route('/')
-def home():
-    return """
-    <h1>GitHub Analyzer API</h1>
-    <p>Use the following endpoints:</p>
-    <ul>
-        <li>/analyze/&lt;username&gt;</li>
-        <li>/followers/&lt;username&gt;</li>
-        <li>/following/&lt;username&gt;</li>
-        <li>/repos/&lt;username&gt;</li>
-        <li>/readme/&lt;username&gt;/&lt;repo&gt;</li>
-    </ul>
-    """
 
-@app.route('/analyze/<username>')
+# ---------- FRONTEND ROUTES ----------
+@app.route("/")
+def serve_frontend():
+    """Serve React frontend build"""
+    return send_from_directory(app.static_folder, "index.html")
+
+
+@app.errorhandler(404)
+def not_found(e):
+    """Handle React client-side routing"""
+    return send_from_directory(app.static_folder, "index.html")
+
+
+# ---------- BACKEND API ROUTES ----------
+@app.route("/api/analyze/<username>")
 def analyze(username):
     profile, pcode = get_user_profile(username)
     if pcode == 403:
@@ -51,11 +52,11 @@ def analyze(username):
     repo_commits = []
     total_commits = 0
     for repo in repos:
-        name = repo.get('name')
+        name = repo.get("name")
         if not name:
             continue
-        stars = repo.get('stargazers_count', 0)
-        forks = repo.get('forks_count', 0)
+        stars = repo.get("stargazers_count", 0)
+        forks = repo.get("forks_count", 0)
         stars_per_repo.append({"name": name, "stars": stars})
         forks_per_repo.append({"name": name, "forks": forks})
         commits = repo_commit_counts.get(name, 0)
@@ -76,7 +77,8 @@ def analyze(username):
         "repo_commits": repo_commits
     })
 
-@app.route('/followers/<username>')
+
+@app.route("/api/followers/<username>")
 def followers(username):
     users, code = get_followers(username)
     if code == 403:
@@ -87,7 +89,8 @@ def followers(username):
         return jsonify({"error": "Upstream error"}), 502
     return jsonify(users)
 
-@app.route('/following/<username>')
+
+@app.route("/api/following/<username>")
 def following(username):
     users, code = get_following(username)
     if code == 403:
@@ -98,7 +101,8 @@ def following(username):
         return jsonify({"error": "Upstream error"}), 502
     return jsonify(users)
 
-@app.route('/repos/<username>')
+
+@app.route("/api/repos/<username>")
 def repos(username):
     profile, pcode = get_user_profile(username)
     if pcode == 403:
@@ -110,7 +114,8 @@ def repos(username):
     repos = get_user_repos_list(username)
     return jsonify(repos)
 
-@app.route('/readme/<username>/<repo>')
+
+@app.route("/api/readme/<username>/<repo>")
 def readme(username, repo):
     text, code = get_readme(username, repo)
     if code == 403:
@@ -121,6 +126,8 @@ def readme(username, repo):
         return jsonify({"error": "Upstream error"}), 502
     return jsonify({"readme": text})
 
+
+
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))  # Use Render's port
+    port = int(os.environ.get("PORT", 5000))  # Use Render's dynamic port
     app.run(host="0.0.0.0", port=port)
