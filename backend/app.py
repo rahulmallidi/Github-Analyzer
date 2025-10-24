@@ -1,37 +1,9 @@
-import os
-from flask import Flask, jsonify, send_from_directory
+from flask import Flask, jsonify
 from flask_cors import CORS
-from backend.services.github_api import (
-    get_repos,
-    get_languages,
-    get_commit_activity,
-    get_user_profile,
-    get_followers,
-    get_following,
-    get_user_repos_list,
-    get_readme
-)
-
-# Serve React build folder
-app = Flask(__name__, static_folder="frontend/build", static_url_path="")
+from services.github_api import get_repos, get_languages, get_commit_activity, get_user_profile, get_followers, get_following, get_user_repos_list, get_readme
+app = Flask(__name__)
 CORS(app)
-
-
-# ---------- FRONTEND ROUTES ----------
-@app.route("/")
-def serve_frontend():
-    """Serve React frontend build"""
-    return send_from_directory(app.static_folder, "index.html")
-
-
-@app.errorhandler(404)
-def not_found(e):
-    """Handle React client-side routing"""
-    return send_from_directory(app.static_folder, "index.html")
-
-
-# ---------- BACKEND API ROUTES ----------
-@app.route("/api/analyze/<username>")
+@app.route('/analyze/<username>')
 def analyze(username):
     profile, pcode = get_user_profile(username)
     if pcode == 403:
@@ -45,18 +17,21 @@ def analyze(username):
     total_repos = len(repos)
     languages = get_languages(username, repos)
     commit_activity, repo_commit_counts = get_commit_activity(username, repos)
-    most_active_repo = max(repo_commit_counts, key=repo_commit_counts.get) if repo_commit_counts else ""
+    most_active_repo = ""
+    if repo_commit_counts:
+        most_active_repo = max(repo_commit_counts, key=repo_commit_counts.get)
 
+    # stars and forks per repo
     stars_per_repo = []
     forks_per_repo = []
     repo_commits = []
     total_commits = 0
     for repo in repos:
-        name = repo.get("name")
+        name = repo.get('name')
         if not name:
             continue
-        stars = repo.get("stargazers_count", 0)
-        forks = repo.get("forks_count", 0)
+        stars = repo.get('stargazers_count', 0)
+        forks = repo.get('forks_count', 0)
         stars_per_repo.append({"name": name, "stars": stars})
         forks_per_repo.append({"name": name, "forks": forks})
         commits = repo_commit_counts.get(name, 0)
@@ -78,7 +53,7 @@ def analyze(username):
     })
 
 
-@app.route("/api/followers/<username>")
+@app.route('/followers/<username>')
 def followers(username):
     users, code = get_followers(username)
     if code == 403:
@@ -90,7 +65,7 @@ def followers(username):
     return jsonify(users)
 
 
-@app.route("/api/following/<username>")
+@app.route('/following/<username>')
 def following(username):
     users, code = get_following(username)
     if code == 403:
@@ -102,7 +77,7 @@ def following(username):
     return jsonify(users)
 
 
-@app.route("/api/repos/<username>")
+@app.route('/repos/<username>')
 def repos(username):
     profile, pcode = get_user_profile(username)
     if pcode == 403:
@@ -115,7 +90,7 @@ def repos(username):
     return jsonify(repos)
 
 
-@app.route("/api/readme/<username>/<repo>")
+@app.route('/readme/<username>/<repo>')
 def readme(username, repo):
     text, code = get_readme(username, repo)
     if code == 403:
@@ -125,9 +100,3 @@ def readme(username, repo):
     if code != 200:
         return jsonify({"error": "Upstream error"}), 502
     return jsonify({"readme": text})
-
-
-
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))  # Use Render's dynamic port
-    app.run(host="0.0.0.0", port=port)
