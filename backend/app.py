@@ -1,11 +1,6 @@
-# backend/app.py
-
-import os
 from flask import Flask, jsonify
 from flask_cors import CORS
-
-# Import your service functions using package-style imports
-from backend.services.github_api import (
+from services.github_api import (
     get_repos,
     get_languages,
     get_commit_activity,
@@ -15,9 +10,25 @@ from backend.services.github_api import (
     get_user_repos_list,
     get_readme
 )
+import os
 
 app = Flask(__name__)
 CORS(app)
+
+# Root route to avoid 404
+@app.route('/')
+def home():
+    return """
+    <h1>GitHub Analyzer API</h1>
+    <p>Use the following endpoints:</p>
+    <ul>
+        <li>/analyze/&lt;username&gt;</li>
+        <li>/followers/&lt;username&gt;</li>
+        <li>/following/&lt;username&gt;</li>
+        <li>/repos/&lt;username&gt;</li>
+        <li>/readme/&lt;username&gt;/&lt;repo&gt;</li>
+    </ul>
+    """
 
 @app.route('/analyze/<username>')
 def analyze(username):
@@ -110,7 +121,6 @@ def readme(username, repo):
         return jsonify({"error": "Upstream error"}), 502
     return jsonify({"readme": text})
 
-# Run the app on Render
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))  # Use Render's PORT
+    port = int(os.environ.get("PORT", 5000))  # Use Render's port
     app.run(host="0.0.0.0", port=port)
