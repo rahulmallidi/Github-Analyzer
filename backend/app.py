@@ -1,3 +1,5 @@
+# backend/app.py
+
 from flask import Flask, jsonify
 from flask_cors import CORS
 from services.github_api import (
@@ -11,9 +13,30 @@ from services.github_api import (
     get_readme
 )
 
+import os
+import sys
+
+# -----------------------------
+# Ensure services folder is found
+# -----------------------------
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
+# -----------------------------
+# Flask app setup
+# -----------------------------
 app = Flask(__name__)
 CORS(app)
 
+# -----------------------------
+# Homepage route
+# -----------------------------
+@app.route('/')
+def home():
+    return "Welcome to GitHub Analyzer API! Use /analyze/<username> to start."
+
+# -----------------------------
+# Analyze endpoint
+# -----------------------------
 @app.route('/analyze/<username>')
 def analyze(username):
     profile, pcode = get_user_profile(username)
@@ -30,7 +53,6 @@ def analyze(username):
     commit_activity, repo_commit_counts = get_commit_activity(username, repos)
     most_active_repo = max(repo_commit_counts, key=repo_commit_counts.get) if repo_commit_counts else ""
 
-    # stars and forks per repo
     stars_per_repo = []
     forks_per_repo = []
     repo_commits = []
@@ -61,7 +83,9 @@ def analyze(username):
         "repo_commits": repo_commits
     })
 
-
+# -----------------------------
+# Followers
+# -----------------------------
 @app.route('/followers/<username>')
 def followers(username):
     users, code = get_followers(username)
@@ -73,7 +97,9 @@ def followers(username):
         return jsonify({"error": "Upstream error"}), 502
     return jsonify(users)
 
-
+# -----------------------------
+# Following
+# -----------------------------
 @app.route('/following/<username>')
 def following(username):
     users, code = get_following(username)
@@ -85,7 +111,9 @@ def following(username):
         return jsonify({"error": "Upstream error"}), 502
     return jsonify(users)
 
-
+# -----------------------------
+# User repos
+# -----------------------------
 @app.route('/repos/<username>')
 def repos(username):
     profile, pcode = get_user_profile(username)
@@ -98,7 +126,9 @@ def repos(username):
     repos = get_user_repos_list(username)
     return jsonify(repos)
 
-
+# -----------------------------
+# Repo README
+# -----------------------------
 @app.route('/readme/<username>/<repo>')
 def readme(username, repo):
     text, code = get_readme(username, repo)
@@ -110,10 +140,9 @@ def readme(username, repo):
         return jsonify({"error": "Upstream error"}), 502
     return jsonify({"readme": text})
 
-
-
-import os
-
+# -----------------------------
+# Run locally
+# -----------------------------
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))  # Use Render's port
+    port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
