@@ -1,8 +1,19 @@
 from flask import Flask, jsonify
 from flask_cors import CORS
-from services.github_api import get_repos, get_languages, get_commit_activity, get_user_profile, get_followers, get_following, get_user_repos_list, get_readme
+from services.github_api import (
+    get_repos,
+    get_languages,
+    get_commit_activity,
+    get_user_profile,
+    get_followers,
+    get_following,
+    get_user_repos_list,
+    get_readme
+)
+
 app = Flask(__name__)
 CORS(app)
+
 @app.route('/analyze/<username>')
 def analyze(username):
     profile, pcode = get_user_profile(username)
@@ -17,9 +28,7 @@ def analyze(username):
     total_repos = len(repos)
     languages = get_languages(username, repos)
     commit_activity, repo_commit_counts = get_commit_activity(username, repos)
-    most_active_repo = ""
-    if repo_commit_counts:
-        most_active_repo = max(repo_commit_counts, key=repo_commit_counts.get)
+    most_active_repo = max(repo_commit_counts, key=repo_commit_counts.get) if repo_commit_counts else ""
 
     # stars and forks per repo
     stars_per_repo = []
@@ -100,3 +109,11 @@ def readme(username, repo):
     if code != 200:
         return jsonify({"error": "Upstream error"}), 502
     return jsonify({"readme": text})
+
+
+
+import os
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))  # Use Render's port
+    app.run(host="0.0.0.0", port=port)
